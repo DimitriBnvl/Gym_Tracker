@@ -6,61 +6,64 @@ from datetime import datetime
 load_dotenv()
 
 class GymDataProcessing:
-    def __init__(self, query, weight, height, age, gender):
-        #-----------------Post Exercise-----------------#
-        self.exercise_url      = "https://app.100daysofpython.dev"
-        self.exercise_post_url = f"{self.exercise_url}/v1/nutrition/natural/exercise"
+    EXERCISE_BASE_URL = "https://app.100daysofpython.dev/v1/nutrition/natural/exercise"
+    SHEETY_URL = "https://api.sheety.co/12b1cd54a019188aeb95639019259c73/workoutTracker/workouts"
 
-        self.exercise_params = {
-            "query"    : query,
-            "weight_kg": weight,
-            "heigh_cm" : height,
-            "age"      : age,
-            "gender"   : gender,
-        }
+    def __init__(self, query: str, weight: float, height: float, age: int, gender: str):
+        self.query = query
+        self.weight = weight
+        self.height = height
+        self.age = age
+        self.gender = gender
 
         self.exercise_headers = {
             "Content-Type": "application/json",
-            "x-app-id"    : os.environ.get("EXERCISE_API_APP_ID"),
-            "x-app-key"   : os.environ.get("EXERCISE_API_KEY"),
+            "x-app-id": os.environ["EXERCISE_API_APP_ID"],
+            "x-app-key": os.environ["EXERCISE_API_KEY"],
         }
-
-        #-----------------Post in Sheets-----------------#
-        self.sheety_post_url   = f"https://api.sheety.co/12b1cd54a019188aeb95639019259c73/workoutTracker/workouts"
-
-        self.date_now = datetime.today().strftime('%d/%m/%Y')
-        self.time_now = datetime.today().strftime("%H:%M:%S")
-
-
         self.sheets_headers = {
             "Content-Type": "application/json",
-            "Authorization": os.environ.get("SHEETY_API_KEY"),
+            "Authorization": os.environ["SHEETY_API_TOKEN"],
         }
 
-        exercises_list = self.post_exercise()
+    def fetch_exercises(self) -> list[dict]:
+        """Call the nutrition API and return a list of parsed exercises."""
+        payload = {
+            "query": self.query,
+            "weight_kg": self.weight,
+            "heigh_cm": self.height,   # typo preserved to match API contract
+            "age": self.age,
+            "gender": self.gender,
+        }
 
-        for exercise in exercises_list:
-            self.exercise_name = exercise["name"]
-            self.exercise_duration = exercise["duration_min"]
-            self.exercise_calories = exercise["nf_calories"]
+        response = requests.post(
+            url=self.EXERCISE_BASE_URL,
+            json=payload,
+            headers=self.exercise_headers,
+        )
 
-        self.sheets_params = {
-            "workout": {
-                "date": self.date_now,
-                "time": self.time_now,
-                "exercise": self.exercise_name.title(),
-                "duration": self.exercise_duration,
-                "calories": self.exercise_calories,
+        response.raise_for_status()
+        return response.json()["exercises"]
+
+    def log_exercises(self) -> None:
+        """Fetch exercises and write each one as a row in the spreadsheet."""
+        date = datetime.today().strftime("%d/%m/%Y")
+        time = datetime.today().strftime("%H:%M:%S")
+
+        for exercise in self.fetch_exercises():
+            payload = {
+                "workout": {
+                    "date": date,
+                    "time": time,
+                    "exercise": exercise["name"].title(),
+                    "duration": exercise["duration_min"],
+                    "calories": exercise["nf_calories"],
+                }
             }
-        }
-
-    def post_exercise(self):
-        exercise_data = requests.post(url=self.exercise_post_url, json=self.exercise_params, headers=self.exercise_headers)
-        exercise_data.raise_for_status()
-        exercises = exercise_data.json()
-        return exercises["exercises"]
-
-    def post_in_sheet(self):
-            sheet_data = requests.post(url=self.sheety_post_url, json=self.sheets_params, headers=self.sheets_headers)
-            sheet_data.raise_for_status()
-            print(sheet_data.status_code)
+            response = requests.post(
+                url=self.SHEETY_URL,
+                json=payload,
+                headers=self.sheets_headers,
+            )
+            response.raise_for_status()
+            print(f"Logged: {exercise['name']} — {response.status_code}")

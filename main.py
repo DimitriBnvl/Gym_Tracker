@@ -21,6 +21,6 @@ query = input("What exercises did you do today: ")
 
 if __name__ == '__main__':
     data_processor = GymDataProcessing(query, WEIGHT_KG, HEIGHT_CM, AGE, GENDER)
-    data_processor.post_in_sheet()
+    data_processor.log_exercises()
 
 
