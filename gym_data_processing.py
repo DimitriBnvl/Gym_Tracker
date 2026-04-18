@@ -7,17 +7,6 @@ load_dotenv()
 
 class GymDataProcessing:
     def __init__(self, query, weight, height, age, gender):
-        self.query_guidelines = """
-        Welcome to Gym Track! To log your exercise, please use the following convention:
-            * Include a time frame (in minutes or hours).
-            * Include one of the following activities:
-                - Running/Jogging - "ran for 30 minutes", "jogged 2 kilometers"
-                - Swimming - "swam for 1 hour", "swimming laps"
-                - Walking - "walked 3 km", "brisk walk 45 min"
-                - Cycling - "biked for 1 hour", "rode bike 10 km"
-                - Weightlifting - "lifted weights 45 min", "weight training"
-        """
-
         #-----------------Post Exercise-----------------#
         self.exercise_url      = "https://app.100daysofpython.dev"
         self.exercise_post_url = f"{self.exercise_url}/v1/nutrition/natural/exercise"
@@ -74,3 +63,4 @@ class GymDataProcessing:
     def post_in_sheet(self):
             sheet_data = requests.post(url=self.sheety_post_url, json=self.sheets_params, headers=self.sheets_headers)
             sheet_data.raise_for_status()
+            print(sheet_data.status_code)
