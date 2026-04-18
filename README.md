@@ -2,6 +2,12 @@
 For Day 38 of the 100 Days of Code, I used natural language processing and Google Sheets to track exercise progress.
 By inputting a short workout description, the program will track its duration and calories the exercise burned.
 
+<div align="center">
+  <img width="600" alt="Screenshot 2026-04-18 at 14 29 35" src="https://github.com/user-attachments/assets/ac79e96e-b0f3-4104-a312-ed679b2da8d4" />
+  <br>
+  <img width="600" alt="Screenshot 2026-04-18 at 14 30 28" src="https://github.com/user-attachments/assets/01f836bb-1c6e-45a8-b391-3e34b20be636" />
+</div>
+
 # Tech Stack #
 - Python
 - Requests
