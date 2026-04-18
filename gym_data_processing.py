@@ -6,7 +6,32 @@ from datetime import datetime
 load_dotenv()
 
 class GymDataProcessing:
-    EXERCISE_BASE_URL = "https://app.100daysofpython.dev/v1/nutrition/natural/exercise"
+    """
+    Tracks workout data by fetching exercise metrics from the Nutritionix API
+    and logging each exercise as a row in a Google Sheet via Sheety.
+
+    Credentials are read from environment variables at instantiation time:
+        - EXERCISE_API_APP_ID  : Nutritionix application ID
+        - EXERCISE_API_KEY     : Nutritionix application key
+        - SHEETY_API_TOKEN     : Sheety authorisation token (include the
+                                 scheme if required, e.g. "Bearer <token>")
+
+    Typical usage:
+        tracker = GymDataProcessing(
+            query="ran 5km and did 20 minutes of cycling",
+            weight=75.0,
+            height=180.0,
+            age=25,
+            gender="male",
+        )
+        tracker.log_exercises()
+
+    Raises:
+        KeyError: If any required environment variable is missing.
+        requests.HTTPError: If either API returns a non-2xx response.
+    """
+
+    EXERCISE_URL_ENDPOINT = "https://app.100daysofpython.dev/v1/nutrition/natural/exercise"
     SHEETY_URL = "https://api.sheety.co/12b1cd54a019188aeb95639019259c73/workoutTracker/workouts"
 
     def __init__(self, query: str, weight: float, height: float, age: int, gender: str):
@@ -31,13 +56,13 @@ class GymDataProcessing:
         payload = {
             "query": self.query,
             "weight_kg": self.weight,
-            "heigh_cm": self.height,   # typo preserved to match API contract
+            "height_cm": self.height,
             "age": self.age,
             "gender": self.gender,
         }
 
         response = requests.post(
-            url=self.EXERCISE_BASE_URL,
+            url=self.EXERCISE_URL_ENDPOINT,
             json=payload,
             headers=self.exercise_headers,
         )
@@ -60,10 +85,12 @@ class GymDataProcessing:
                     "calories": exercise["nf_calories"],
                 }
             }
+
             response = requests.post(
                 url=self.SHEETY_URL,
                 json=payload,
                 headers=self.sheets_headers,
             )
+
             response.raise_for_status()
             print(f"Logged: {exercise['name']} — {response.status_code}")
